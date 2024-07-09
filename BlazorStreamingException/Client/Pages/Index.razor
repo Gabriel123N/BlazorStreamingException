@@ -1,0 +1,49 @@
+﻿@page "/"
+
+<PageTitle>Index</PageTitle>
+
+
+<label>Enabled streaming <InputCheckbox @bind-Value="@StreamingEnabled"></InputCheckbox></label>
+
+
+<InputFile OnChange="SendRequest"></InputFile>
+
+
+<SurveyPrompt Title="How is Blazor working for you?"/>
+
+@code{
+
+    [Inject] HttpClient HttpClient { get; set; }
+
+    public bool StreamingEnabled { get; set; } = false;
+
+
+    public async void SendRequest(InputFileChangeEventArgs e)
+    {
+        HttpRequestMessage req = new HttpRequestMessage(HttpMethod.Post, "/api/test");
+        
+
+        req.Content = new StreamContent(e.File.OpenReadStream(128_000_000L));
+
+        req.SetBrowserRequestStreamingEnabled(StreamingEnabled);
+        try
+        {
+            using var result = await HttpClient.SendAsync(req);
+            Console.WriteLine("Error message is {0}", await result.Content.ReadAsStringAsync());
+        }
+        catch (Exception exception)
+        {
+            Console.WriteLine("Printing exception stack trace");
+            Console.WriteLine(exception.StackTrace);
+        }
+    }
+    
+    private byte[] GetByteArray(int sizeInKb)
+    {
+        Random rnd = new Random();
+        byte[] b = new byte[sizeInKb * 1024]; // convert kb to byte
+        rnd.NextBytes(b);
+        return b;
+    }
+
+}
